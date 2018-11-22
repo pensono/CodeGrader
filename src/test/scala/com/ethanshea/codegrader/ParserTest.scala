@@ -3,22 +3,23 @@ package com.ethanshea.codegrader
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions._
 
-import com.ethanshea.codegrader.RacketMetaSyntax.parseExpression
-
 object ParserTest {
   @Test
   def parseLiterals(): Unit = {
-    assertEquals(Literal("5"), parseExpression("5"))
-    assertEquals(Identifier("car"), parseExpression("car"))
-    assertEquals(Identifier("fast-car"), parseExpression("fast-car"))
-    assertEquals(Literal("#f"), parseExpression("#f"))
-    assertEquals(Literal("\"string\""), parseExpression("\"string\""))
+    assertEquals(Identifier("car"), p("car"))
+    assertEquals(Identifier("fast-car"), p("fast-car"))
+
+    assertEquals(Literal("5"), p("5"))
+    assertEquals(Literal("#f"), p("#f"))
+    assertEquals(Literal("\"string\""), p("\"string\""))
+
+    assertEquals(MetaVariable("expr"), p("$expr"))
   }
 
   @Test
   def parseSexp() : Unit = {
-    assertEquals(2, parseExpression("(car xs)").asInstanceOf[SExpression].children.size)
-    assertEquals(3, parseExpression("(car 5 xs)").asInstanceOf[SExpression].children.size)
-    assertEquals(3, parseExpression("(car 5 (cdr xs))").asInstanceOf[SExpression].children.size)
+    assertEquals(2, p("(car xs)").asInstanceOf[SExpression].children.size)
+    assertEquals(3, p("(car 5 xs)").asInstanceOf[SExpression].children.size)
+    assertEquals(3, p("(car 5 (cdr xs))").asInstanceOf[SExpression].children.size)
   }
 }
