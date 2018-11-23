@@ -20,14 +20,37 @@ object MatchTest {
     assertEquals(None, matchExpr(p("car"), p("1")))
   }
 
+  @Test
   def sexpMatch() : Unit = {
     assertEquals(Some(Map.empty), matchExpr(p("(car ls)"), p("(car ls)")))
     assertEquals(Some(Map.empty), matchExpr(p("(car ls \"lol\")"), p("(car ls \"lol\")")))
     assertEquals(None, matchExpr(p("(car \"lol\" ls)"), p("(car ls \"lol\")")))
     assertEquals(None, matchExpr(p("(car ls)"), p("(car ls \"lol\")")))
-    assertEquals(None, matchExpr(p("(car \"lol\" ls)"), p("(car ls")))
+    assertEquals(None, matchExpr(p("(car \"lol\" ls)"), p("(car ls)")))
 
     assertEquals(None, matchExpr(p("(car \"lol\" ls)"), p("car")))
     assertEquals(None, matchExpr(p("(car \"lol\" ls)"), p("4")))
+  }
+
+  @Test
+  def variableBinding() : Unit = {
+    assertEquals(Some(Map("x" -> p("xs"))), matchExpr(p("(car xs)"), p("(car $x)")))
+    assertEquals(None, matchExpr(p("(zip xs ys)"), p("(car $x $y)")))
+    assertEquals(Some(Map("x" -> p("xs"), "y" -> p("ys"))), matchExpr(p("(zip xs ys)"), p("(zip $x $y)")))
+    assertEquals(Some(Map("x" -> p("(xs)"))), matchExpr(p("(car (xs))"), p("(car $x)")))
+    assertEquals(Some(Map("x" -> p("xs"))), matchExpr(p("(car (xs))"), p("(car ($x))")))
+  }
+
+  @Test
+  def multipleVariableOccurrences() : Unit = {
+    assertEquals(Some(Map("x" -> p("xs"))), matchExpr(p("(car xs xs)"), p("(car $x $x)")))
+
+    assertEquals(None, matchExpr(p("(car xs ys)"), p("(car $x $x)")))
+    assertEquals(None, matchExpr(p("(car xs xs)"), p("(car $x ($x))")))
+    assertEquals(Some(Map("x" -> p("xs"))), matchExpr(p("(car xs (xs))"), p("(car $x ($x))")))
+
+    assertEquals(None, matchExpr(p("(car xs (ys))"), p("(car $x $x)")))
+    assertEquals(None, matchExpr(p("(car xs (xs))"), p("(car $x $x)")))
+    assertEquals(Some(Map("x" -> p("xs"))), matchExpr(p("(car xs (xs))"), p("(car $x ($x))")))
   }
 }
