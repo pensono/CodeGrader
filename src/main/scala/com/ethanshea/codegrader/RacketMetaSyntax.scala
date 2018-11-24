@@ -5,10 +5,18 @@ import scala.collection.JavaConverters._
 import org.antlr.v4.runtime.{CharStreams, CodePointCharStream, CommonTokenStream}
 
 sealed abstract class RacketMetaExpression
-case class SExpression(children: List[RacketMetaExpression]) extends RacketMetaExpression
-case class Identifier(id: String) extends RacketMetaExpression
-case class Literal(value: String) extends RacketMetaExpression
-case class MetaVariable(name: String) extends RacketMetaExpression
+case class SExpression(children: List[RacketMetaExpression]) extends RacketMetaExpression {
+  override def toString: String = "(" + children.mkString(" ") + ")"
+}
+case class Identifier(id: String) extends RacketMetaExpression {
+  override def toString: String = id
+}
+case class Literal(value: String) extends RacketMetaExpression {
+  override def toString: String = value
+}
+case class MetaVariable(name: String) extends RacketMetaExpression {
+  override def toString: String = "$" + name
+}
 
 object RacketMetaSyntax {
 
