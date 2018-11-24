@@ -7,21 +7,23 @@ object EquivalenceSubstitution {
 
   def normalizeExpr(expr: RacketMetaExpression, norm: RacketMetaExpression, equivalences: Iterable[RacketEquivalence]): Option[List[RacketRewrite]] = {
     // Use bfs
-    val visitQueue = mutable.Queue(List(new RacketRewrite(expr, expr, new RacketEquivalence())))
+    def orderRewrites(r: List[RacketRewrite]) = -Math.abs(r.last.toExpr.termSize - norm.termSize)
+    val initialRewrite = List(new RacketRewrite(expr, expr, new RacketEquivalence()))
+    val visitQueue = mutable.PriorityQueue(initialRewrite)(Ordering.by(orderRewrites))
     val visitedRewrites = mutable.Set[RacketMetaExpression]()
 
     while (visitQueue.nonEmpty) {
       val visit = visitQueue.dequeue()
-      if (visit.size > 10)
+      if (visit.size > 5)
         return None // Abort!
       visitedRewrites.add(visit.last.toExpr)
 
       val rewrites = equivalences.flatMap(possibleRewrites(visit.last.toExpr, _)).map(r => visit :+ r)
       val newRewrites = rewrites.filter(r => !visitedRewrites.contains(r.last.toExpr))
 
-      val rewrite = newRewrites.find(_.last.toExpr == norm)
-      if (rewrite.isDefined)
-        return Some(rewrite.get)
+      val successfulRewrite = newRewrites.find(_.last.toExpr == norm)
+      if (successfulRewrite.isDefined)
+        return Some(successfulRewrite.get)
 
       visitQueue.addAll(newRewrites)
     }
@@ -32,14 +34,14 @@ object EquivalenceSubstitution {
   // Equivalence parameter type could probably be
   def possibleRewrites(expr: RacketMetaExpression, equivalence: RacketEquivalence) : Iterable[RacketRewrite] = {
     // Try to rewrite at this level
-    val (bindings, templates) = equivalence.members
-      .map(e => (e, matchExpr(expr, e)))
-      .partition{ case (e, b) => b.isDefined }
+    val bindings = equivalence.members.flatMap(matchExpr(expr, _))
 
-    val rewrites =
-      for ((_, binding) <- bindings;
-           (template, _) <- templates)
-      yield new Rewrite(expr, rewriteExpr(template, binding.get), equivalence)
+    val allRewrites =
+      for (binding <- bindings;
+           template <- equivalence.members)
+      yield new RacketRewrite(expr, rewriteExpr(template, binding), equivalence)
+
+    val rewrites = allRewrites.filterNot(e => e.toExpr == e.fromExpr)
 
     // Concat with rewrites at other levels
     val otherRewrites = expr match {
