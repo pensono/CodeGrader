@@ -1,21 +1,70 @@
 package com.ethanshea.codegrader
 
+import scala.collection.mutable
+
 object EquivalenceSubstitution {
+  type RacketRewrite = Rewrite[RacketMetaExpression, RacketEquivalence]
+
+  def normalizeExpr(expr: RacketMetaExpression, norm: RacketMetaExpression, equivalences: Iterable[RacketEquivalence]): Option[List[RacketRewrite]] = {
+    // Use bfs
+    val visitQueue = mutable.Queue(List(new RacketRewrite(expr, expr, new RacketEquivalence())))
+    val visitedRewrites = mutable.Set[RacketMetaExpression]()
+
+    while (visitQueue.nonEmpty) {
+      val visit = visitQueue.dequeue()
+      if (visit.size > 10)
+        return None // Abort!
+      visitedRewrites.add(visit.last.toExpr)
+
+      val rewrites = equivalences.flatMap(possibleRewrites(visit.last.toExpr, _)).map(r => visit :+ r)
+      val newRewrites = rewrites.filter(r => !visitedRewrites.contains(r.last.toExpr))
+
+      val rewrite = newRewrites.find(_.last.toExpr == norm)
+      if (rewrite.isDefined)
+        return Some(rewrite.get)
+
+      visitQueue.addAll(newRewrites)
+    }
+
+    None
+  }
+
   // Equivalence parameter type could probably be
-  def possibleRewrites(expr: RacketMetaExpression, racketEquivalences: List[RacketEquivalence]) = {
+  def possibleRewrites(expr: RacketMetaExpression, equivalence: RacketEquivalence) : Iterable[RacketRewrite] = {
+    // Try to rewrite at this level
+    val (bindings, templates) = equivalence.members
+      .map(e => (e, matchExpr(expr, e)))
+      .partition{ case (e, b) => b.isDefined }
+
+    val rewrites =
+      for ((_, binding) <- bindings;
+           (template, _) <- templates)
+      yield new Rewrite(expr, rewriteExpr(template, binding.get), equivalence)
+
+    // Concat with rewrites at other levels
+    val otherRewrites = expr match {
+      case SExpression(children) =>
+        children.zipWithIndex.flatMap { case (child, index) =>
+          val subexpRewrites = possibleRewrites(child, equivalence)
+          subexpRewrites.map(e => new RacketRewrite(expr, SExpression(children.updated(index, e.toExpr)), e.equivalence))
+        }
+      case _ => List.empty
+    }
+
+    rewrites ++ otherRewrites
   }
 
   // Equivalence parameter type could probably be generalized
-  def normalizeExpr(expr: RacketMetaExpression, norm: RacketMetaExpression, racketEquivalences: RacketEquivalence) : RacketMetaExpression = {
+  def normalizeExpr(expr: RacketMetaExpression, norm: RacketMetaExpression, equivalence: RacketEquivalence) : RacketMetaExpression = {
     // Normalize sub expressions
     val subRewritesExpr = expr match {
-      case SExpression(children) => SExpression(children.map(normalizeExpr(_, norm, racketEquivalences)))
+      case SExpression(children) => SExpression(children.map(normalizeExpr(_, norm, equivalence)))
       case _ => expr
     }
 
     // Find rewrites
-    val bindings = racketEquivalences.members.flatMap(matchExpr(subRewritesExpr, _))
-    val templates = racketEquivalences.members.filter(matchExpr(norm, _).isDefined)
+    val bindings = equivalence.members.flatMap(matchExpr(subRewritesExpr, _))
+    val templates = equivalence.members.filter(matchExpr(norm, _).isDefined)
 
     val rewrittenExpr =
       if (bindings.nonEmpty && templates.nonEmpty)
@@ -27,7 +76,7 @@ object EquivalenceSubstitution {
     (rewrittenExpr, norm) match {
       case (SExpression(eChildren), SExpression(tChildren)) =>
         if (eChildren.size == tChildren.size)
-          SExpression(eChildren.zip(tChildren).map { case (e, t) => normalizeExpr(e, t, racketEquivalences) })
+          SExpression(eChildren.zip(tChildren).map { case (e, t) => normalizeExpr(e, t, equivalence) })
         else
           rewrittenExpr
       case _ => rewrittenExpr
@@ -69,7 +118,7 @@ object EquivalenceSubstitution {
         }
         eChildren.zip(nChildren)
           .map { case (e, n) => matchExpr(e, n) }
-          .fold[Option[Map[String, RacketMetaExpression]]](Some(Map.empty)) {
+          .foldLeft[Option[Map[String, RacketMetaExpression]]](Some(Map.empty)) {
             (acc, m) => acc.flatMap{a => m.flatMap(safeMapMerge(a, _)) }
         }
       case _ => None

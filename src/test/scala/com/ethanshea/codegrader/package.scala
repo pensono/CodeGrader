@@ -2,6 +2,6 @@ package com.ethanshea
 
 package object codegrader {
   def p(input: String) : RacketMetaExpression = RacketMetaSyntax.parseExpression(input)
-  def equiv(racketEquivalence: RacketEquivalence, a: RacketMetaExpression, b: RacketMetaExpression) =
-    EquivalenceSubstitution.equivalent(a, b, racketEquivalence)
+  def equiv(equivalences: List[RacketEquivalence], a: RacketMetaExpression, b: RacketMetaExpression) : Boolean =
+    EquivalenceSubstitution.normalizeExpr(a, b, equivalences).isDefined
 }

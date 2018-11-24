@@ -2,7 +2,7 @@ name := "codegrader"
 
 version := "0.1"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.13.0-M5"
 
 libraryDependencies += "org.antlr" % "antlr4-runtime" % "4.7.1"
 

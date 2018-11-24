@@ -10,12 +10,14 @@ object NormalizeTest {
 
   @Test
   def basicMatch(): Unit = {
-    assertTrue(equiv(basicSimplify, p("(+ 1 0)"), p("1")))
-    assertFalse(equiv(basicSimplify, p("(+ 1 1)"), p("2")))
 
-    assertTrue(equiv(basicSimplify, p("(* 2 (+ 1 0))"), p("(* 2 1)")))
-    assertTrue(equiv(basicSimplify, p("(+ (+ 1 0) 0)"), p("1")))
+    assertTrue(equiv(List(basicSimplify), p("(* 2 (+ 1 0))"), p("(* 2 1)")))
 
-    assertTrue(equiv(basicSimplify, p("(* 2 (+ (+ 1 0) 0))"), p("(* 2 1)")))
+    assertTrue(equiv(List(basicSimplify), p("(+ 1 0)"), p("1")))
+    assertFalse(equiv(List(basicSimplify), p("(+ 1 1)"), p("2")))
+
+    assertTrue(equiv(List(basicSimplify), p("(+ (+ 1 0) 0)"), p("1")))
+
+    assertTrue(equiv(List(basicSimplify), p("(* 2 (+ (+ 1 0) 0))"), p("(* 2 1)")))
   }
 }

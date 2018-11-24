@@ -5,6 +5,7 @@ import scala.collection.JavaConverters._
 import org.antlr.v4.runtime.{CharStreams, CodePointCharStream, CommonTokenStream}
 
 sealed abstract class RacketMetaExpression
+
 case class SExpression(children: List[RacketMetaExpression]) extends RacketMetaExpression {
   override def toString: String = "(" + children.mkString(" ") + ")"
 }
