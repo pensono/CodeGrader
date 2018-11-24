@@ -98,7 +98,7 @@ object EquivalenceSubstitution {
     template match {
       case Literal(_) => template
       case Identifier(_) => template
-      case MetaVariable(name) => bindings(name)
+      case MetaVariable(name) => bindings.getOrElse(name, template) // If we can't find the key, just leave a quantified variable in it's place
       case SExpression(tChildren) =>
         SExpression(tChildren.map(rewriteExpr(_, bindings)))
     }

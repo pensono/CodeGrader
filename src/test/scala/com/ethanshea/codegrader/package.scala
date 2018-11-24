@@ -8,6 +8,7 @@ package object codegrader {
   val basicSimplify = new RacketEquivalence("(+ 1 0)", "1") // Not generalizable, but still useful for these tests
   val additiveIdentity = new RacketEquivalence("(+ $x 0)", "(+ 0 $x)", "$x")
   val multiplicativeIdentity = new RacketEquivalence("(* $x 1)", "(* 1 $x)", "$x")
+  val ifFalseElimination = new RacketEquivalence("(if #f $t $f)", "$f")
 
   def p(input: String) : RacketMetaExpression = RacketMetaSyntax.parseExpression(input)
   def equiv(equivalences: List[RacketEquivalence], a: RacketMetaExpression, b: RacketMetaExpression) : Boolean =
