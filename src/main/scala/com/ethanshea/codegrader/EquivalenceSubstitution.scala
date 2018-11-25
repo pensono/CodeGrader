@@ -7,23 +7,22 @@ object EquivalenceSubstitution {
 
   def normalizeExpr(expr: RacketMetaExpression, norm: RacketMetaExpression, equivalences: Iterable[RacketEquivalence]): Option[List[RacketRewrite]] = {
     // Use bfs
-    def orderRewrites(r: List[RacketRewrite]) = -Math.abs(r.last.toExpr.termSize - norm.termSize)
     val initialRewrite = List(new RacketRewrite(expr, expr, new RacketEquivalence()))
-    val visitQueue = mutable.PriorityQueue(initialRewrite)(Ordering.by(orderRewrites))
+    val visitQueue = mutable.PriorityQueue(initialRewrite)(Ordering.by(-_.size))
     val visitedRewrites = mutable.Set[RacketMetaExpression]()
 
     while (visitQueue.nonEmpty) {
       val visit = visitQueue.dequeue()
       if (visit.size > 5)
         return None // Abort!
+
+      if (visit.last.toExpr == norm)
+        return Some(visit)
+
       visitedRewrites.add(visit.last.toExpr)
 
       val rewrites = equivalences.flatMap(possibleRewrites(visit.last.toExpr, _)).map(r => visit :+ r)
       val newRewrites = rewrites.filter(r => !visitedRewrites.contains(r.last.toExpr))
-
-      val successfulRewrite = newRewrites.find(_.last.toExpr == norm)
-      if (successfulRewrite.isDefined)
-        return Some(successfulRewrite.get)
 
       visitQueue.addAll(newRewrites)
     }

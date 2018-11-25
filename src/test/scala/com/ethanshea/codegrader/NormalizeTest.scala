@@ -23,8 +23,20 @@ object NormalizeTest {
   }
 
   @Test
+  def multipleMatch() : Unit = {
+    assertTrue(equiv(List(additiveIdentity, multiplicativeIdentity), p("2"), p("(* 2 (+ 1 0))")))
+
+    assertTrue(equiv(List(additiveIdentity, multiplicativeIdentity), p("(* 2 (+ 1 0))"), p("2")))
+    assertTrue(equiv(List(additiveIdentity, multiplicativeIdentity), p("(* (+ 1 0) 2)"), p("2")))
+  }
+
+  @Test
   def expressionElimination() : Unit = {
     assertTrue(equiv(List(ifFalseElimination), p("(if #f 1 2)"), p("2")))
+  }
+
+  @Test
+  def expressionIntroduction() : Unit = {
     assertTrue(equiv(List(ifFalseElimination), p("2"), p("(if #f $t 2)")))
   }
 }

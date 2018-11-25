@@ -17,4 +17,9 @@ object PossibleRewriteTest {
     assertTrue(possibleRewrite(additiveIdentity, p("(* 2 (+ 0 1))"), p("(* 2 1)")))
     assertTrue(possibleRewrite(additiveIdentity, p("(* 2 1)"), p("(* 2 (+ 0 1))")))
   }
+
+  @Test
+  def dontRewriteToSelf(): Unit = {
+    assertFalse(possibleRewrite(additiveIdentity, p("4"), p("4")))
+  }
 }
